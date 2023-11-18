@@ -1,7 +1,7 @@
-import { HttpClient, HttpHeaders, HttpParams } from "@angular/common/http";
+import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { Post } from "./post.model";
-import { catchError, map, mergeMap } from "rxjs/operators";
+import { catchError, map, mergeMap, tap } from "rxjs/operators";
 import { Subject, throwError } from "rxjs";
 
 @Injectable({
@@ -10,6 +10,7 @@ import { Subject, throwError } from "rxjs";
 export class PostsService {
   /** ใช้สำหรับ handle error ที่ subscrib ใน service */
   error = new Subject<string>();
+  public sending = new Subject<boolean>();
 
   constructor(private http: HttpClient) { }
 
@@ -66,7 +67,8 @@ export class PostsService {
        * https://ng-course-recipe-book-b111b-default-rtdb.asia-southeast1.firebasedatabase.app/posts.json?print=pretty
        */
       // params: new HttpParams().set('print', 'pretty')
-      params: searchParams
+      params: searchParams,
+      responseType: 'json' // default is 'json' alternative you can change to blob, text etc.
     })
       .pipe(
         /**
@@ -109,7 +111,25 @@ export class PostsService {
   }
 
   deletePost() {
-    return this.http.delete('https://ng-course-recipe-book-b111b-default-rtdb.asia-southeast1.firebasedatabase.app/posts.json');
+    return this.http.delete('https://ng-course-recipe-book-b111b-default-rtdb.asia-southeast1.firebasedatabase.app/posts.json', {
+      /**
+       * evnts is you need very granular(ละเอียด) control over how you update UI for example upload file etc.
+       */
+      observe: 'events'
+    }).pipe(
+      tap(event => {
+        console.log(event);
+
+        if (event.type === HttpEventType.Sent) {
+          this.sending.next(true);
+        }
+
+        if (event.type === HttpEventType.Response) {
+          console.log(event.body);
+          this.sending.next(false);
+        }
+      })
+    )
   }
 
 }

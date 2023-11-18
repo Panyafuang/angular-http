@@ -14,13 +14,18 @@ export class AppComponent implements OnInit, OnDestroy {
   /** ใช้สำหรับ handle error ที่ subscrib ใน component */
   error: null | string = null;
   private errorSub!: Subscription;
+  private sendingSub!: Subscription;
+  isLoading = false;
 
   constructor(private _postsService: PostsService) { }
 
   ngOnInit() {
     this.errorSub = this._postsService.error.subscribe(errorMsg => {
       this.error = errorMsg;
-    })
+    });
+    this.sendingSub = this._postsService.sending.subscribe(isSendding => {
+      this.isLoading = isSendding;
+    });
     this.onFetchPosts();
   }
 
@@ -64,6 +69,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.errorSub.unsubscribe();
+    this.sendingSub.unsubscribe();
   }
 
 }
